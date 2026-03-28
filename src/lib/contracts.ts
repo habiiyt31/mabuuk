@@ -1,5 +1,5 @@
 export const CONTRACTS = {
-  MABUUK: "0x53EC2fa7E120C4Ee85ab3f6F3296A44828F1870e" as `0x${string}`,
+  MABUUK: "0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f" as `0x${string}`,
 } as const;
 
 export const BRADBURY = {

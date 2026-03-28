@@ -1,8 +1,8 @@
-# 🍺 Mabuuk — AI Drunk Transfer Protection
+# 🍺 Mabuuk is AI Drunk Transfer Protection
 
 > **Don't let drunk-you ruin sober-you's portfolio.**
 
-Mabuuk is an AI-powered sobriety verification layer for crypto transfers, built on [GenLayer Bradbury Testnet](https://explorer-bradbury.genlayer.com). Before approving high-value transactions, the contract generates a logical riddle and uses AI validators to analyze your answer. If you sound drunk, panicked, or impaired — the transaction gets blocked and your wallet is locked for 4 hours.
+Mabuuk is an AI-powered sobriety verification layer for crypto transfers, built on [GenLayer Bradbury Testnet](https://explorer-bradbury.genlayer.com). When you attempt a high-value transaction, the contract automatically generates a logical riddle and uses AI validators to analyze your answer. If you sound drunk, panicked, or impaired — the transaction gets blocked and your wallet is locked for 4 hours.
 
 No more waking up to regret.
 
@@ -16,11 +16,12 @@ Crypto transactions are irreversible. One drunk transfer, one panic sell at 3 AM
 
 Mabuuk acts as an AI bodyguard for your wallet:
 
-1. You initiate a transfer — if the amount is below the risk threshold, it goes through instantly
-2. High-value transfer? — the contract generates a logical riddle via AI
-3. You answer the riddle — AI validators analyze your response
-4. ✅ **PASS** → transfer approved, you're verified sober
-5. ❌ **FAIL** → transfer blocked, wallet locked for 4 hours, funds saved
+1. You initiate a transfer with destination and amount
+2. Amount below 500 tokens? → approved instantly, no checks needed
+3. Amount ≥ 500 tokens? → AI automatically generates a riddle on-chain
+4. You answer the riddle → AI validators analyze your response
+5. ✅ **PASS** → transfer approved, you're verified sober
+6. ❌ **FAIL** → transfer blocked, wallet locked for 4 hours, funds saved
 
 The AI doesn't just check if the answer is correct — it analyzes whether the response shows signs of drunk typing, gibberish, panic, or incoherent reasoning.
 
@@ -33,34 +34,49 @@ The AI doesn't just check if the answer is correct — it analyzes whether the r
 ```
 User → MetaMask → GenLayer RPC → Mabuuk Contract → AI Validators
                                         ↓
-                                 Riddle Generation (LLM)
-                                 Sobriety Analysis (LLM)
-                                 Auto-Lock Mechanism
-                                 Per-Wallet Stats Tracking
+                              ┌─────────────────────┐
+                              │  execute_transfer()  │
+                              │         ↓            │
+                              │  amount < 500?       │
+                              │  YES → approve       │
+                              │  NO  → generate      │
+                              │        riddle &      │
+                              │        store pending │
+                              └─────────────────────┘
+                                        ↓
+                              ┌─────────────────────┐
+                              │   answer_riddle()    │
+                              │         ↓            │
+                              │  AI evaluates answer │
+                              │  PASS → approved     │
+                              │  FAIL → locked 4hr   │
+                              └─────────────────────┘
 ```
 
 ### Core Features
 
 | Feature | Description |
 |---------|-------------|
-| 🧩 AI Riddle Generation | Fresh riddle via `gl.nondet.exec_prompt()` for each verification |
+| 🧩 AI Riddle Generation | Automatically triggered during high-value transfers via `gl.nondet.exec_prompt()` |
 | 🧠 Sobriety Verification | AI detects drunk typing, gibberish, and panic behavior |
 | 🔒 Auto-Lock | Failed verification locks the wallet for 4 hours |
 | 📊 Per-Wallet Stats | Tracks attempts, passes, rejections, and funds saved |
-| ⚡ Risk Threshold | Low-value transfers (< 500 tokens) bypass AI checks |
+| ⚡ Risk Threshold | Low-value transfers (< 500 tokens) bypass AI checks instantly |
 | 🔤 Address Normalization | All addresses stored lowercase to prevent mismatch bugs |
+| 📝 Pending Transfer State | High-risk transfers stored as pending until riddle is answered |
 
 ### Contract Methods
 
-| Method | Type | Description |
-|--------|------|-------------|
-| `generate_riddle()` | write | Generate a new riddle via AI |
-| `get_last_riddle()` | view | Retrieve the current riddle |
-| `execute_transfer()` | write | Submit transfer with riddle answer for AI verification |
-| `get_user_profile()` | view | Get wallet stats (attempts, passes, rejections, funds saved) |
-| `check_lock_status()` | view | Check if wallet is currently locked |
-| `get_risk_threshold()` | view | Get current risk threshold value |
-| `get_error()` | view | Get last operation status message |
+| Method | Type | Parameters | Description |
+|--------|------|------------|-------------|
+| `execute_transfer()` | write | `destination`, `amount`, `current_time` | Attempt transfer — low-risk auto-approves, high-risk generates riddle |
+| `answer_riddle()` | write | `user_answer`, `current_time` | Submit riddle answer for AI sobriety verification |
+| `get_pending_riddle()` | view | `user_address` | Get the active riddle for a pending transfer |
+| `get_last_riddle()` | view | — | Retrieve the most recently generated riddle |
+| `get_user_profile()` | view | `user_address` | Get wallet stats (attempts, passes, rejections, funds saved) |
+| `check_lock_status()` | view | `user_address`, `current_time` | Check if wallet is currently locked |
+| `get_risk_threshold()` | view | — | Get current risk threshold value |
+| `get_error()` | view | — | Get last operation status message |
 
 ---
 
@@ -83,8 +99,9 @@ Mabuuk uses `gl.vm.run_nondet_unsafe(leader_fn, validator_fn)` for both riddle g
 |---------|-------|
 | `gl.nondet.exec_prompt()` | Free-text LLM outputs (riddle generation) |
 | Binary PASS/FAIL extraction | Strict consensus matching |
-| `TreeMap[str, ...]` | Per-wallet persistent storage |
+| `TreeMap[str, ...]` | Per-wallet persistent storage (stats, locks, pending transfers) |
 | `.lower()` normalization | Consistent address key mapping |
+| Pending state pattern | `pending_dest`, `pending_amt`, `pending_riddle` per user |
 
 ---
 
@@ -164,15 +181,20 @@ MABUUK-FRONTEND/
 ```
 Connect MetaMask
        ↓
-Enter Transfer Details
+Enter Destination + Amount
        ↓
- Amount < 500? ─── YES ──→ ✅ APPROVED (instant)
+Click "Send Transfer"
+       ↓
+ Amount < 500? ─── YES ──→ ✅ APPROVED (instant, no riddle)
        │
       NO
        ↓
-AI Generates Riddle
+AI Generates Riddle (on-chain)
+Transfer stored as PENDING
        ↓
 User Answers Riddle
+       ↓
+Click "Submit Answer"
        ↓
   AI Analyzes ─── PASS ──→ ✅ APPROVED (sober)
        │
