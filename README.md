@@ -209,7 +209,7 @@ Click "Submit Answer"
 
 | | |
 |---|---|
-| **Deployer** | [`0x8E9F8ACE98dC84159F143ba00C934fAafE3D9bA8`](https://explorer-bradbury.genlayer.com/address/0x8E9F8ACE98dC84159F143ba00C934fAafE3D9bA8) |
+| **Contract Address** | [` 0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) |
 | **Network** | GenLayer Testnet Bradbury |
 | **Chain ID** | `4221` |
 | **RPC** | `zksync-os-testnet-genlayer.zksync.dev` |
