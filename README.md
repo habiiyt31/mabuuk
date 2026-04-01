@@ -247,7 +247,7 @@ genlayer account unlock
 
 # 3. Deploy to Studionet (fast testing)
 genlayer network set studionet
-genlayer deploy --contract contracts/mabuuk.py
+genlayer deploy --contract contracts/mabuuk_studionet.py
 # → Copy the contract address from output
 
 # 4. Deploy to Bradbury (production testnet)
@@ -286,6 +286,7 @@ MABUUK-FRONTEND/
 │
 ├── contracts/
 │   └── mabuuk.py                  # GenLayer Intelligent Contract (Python)
+│   └── mabuuk_studionet.py
 │
 ├── src/
 │   ├── app/
