@@ -17,13 +17,15 @@ Crypto transactions are irreversible. One drunk transfer, one panic sell at 3 AM
 Mabuuk acts as an AI bodyguard for your wallet:
 
 1. You initiate a transfer with destination and amount
-2. Amount below 500 tokens? → approved instantly, no checks needed
-3. Amount ≥ 500 tokens? → AI automatically generates a riddle on-chain
+2. Amount below 500? → approved instantly, no checks needed
+3. Amount ≥ 500? → AI automatically generates a riddle on-chain
 4. You answer the riddle → AI validators analyze your response
 5. ✅ **PASS** → transfer approved, you're verified sober
 6. ❌ **FAIL** → transfer blocked, wallet locked for 4 hours, funds saved
 
 The AI doesn't just check if the answer is correct — it analyzes whether the response shows signs of drunk typing, gibberish, panic, or incoherent reasoning.
+
+> **Note:** Transfer amounts are tracked as `u256` values inside the contract, not as native GEN token transfers. This is a proof-of-concept — the behavioral safety pattern works the same way and can be extended to real token transfers on mainnet.
 
 ---
 
@@ -61,7 +63,7 @@ User → MetaMask → GenLayer RPC → Mabuuk Contract → AI Validators
 | 🧠 Sobriety Verification | AI detects drunk typing, gibberish, and panic behavior |
 | 🔒 Auto-Lock | Failed verification locks the wallet for 4 hours |
 | 📊 Per-Wallet Stats | Tracks attempts, passes, rejections, and funds saved |
-| ⚡ Risk Threshold | Low-value transfers (< 500 tokens) bypass AI checks instantly |
+| ⚡ Risk Threshold | Low-value transfers (< 500) bypass AI checks instantly |
 | 🔤 Address Normalization | All addresses stored lowercase to prevent mismatch bugs |
 | 📝 Pending Transfer State | High-risk transfers stored as pending until riddle is answered |
 
@@ -209,10 +211,10 @@ Click "Submit Answer"
 
 | | |
 |---|---|
-| **Contract Address** | [` 0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) |
+| **Contract Address** | [`0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) |
 | **Network** | GenLayer Testnet Bradbury |
 | **Chain ID** | `4221` |
-| **RPC** | `zksync-os-testnet-genlayer.zksync.dev` |
+| **RPC** | `https://rpc-bradbury.genlayer.com` |
 | **Explorer** | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
 | **Faucet** | [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation/) |
 
