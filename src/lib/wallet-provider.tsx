@@ -1,8 +1,13 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { createClient } from "genlayer-js";
-import { testnetBradbury } from "genlayer-js/chains";
-import { CONTRACTS, BRADBURY } from "./contracts";
+import { testnetBradbury, studionet } from "genlayer-js/chains";
+import { ACTIVE, ACTIVE_CONTRACT } from "./contracts";
+
+const CHAIN_MAP: Record<string, any> = {
+  testnetBradbury,
+  studionet,
+};
 
 interface WalletContextType {
   address: string | null;
@@ -33,9 +38,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const initClient = useCallback((addr: string) => {
     const c = createClient({
-      chain: testnetBradbury,
+      chain: CHAIN_MAP[ACTIVE.chainKey],
       account: addr as `0x${string}`,
-      endpoint: BRADBURY.genLayerRpc,
+      endpoint: ACTIVE.genLayerRpc,
       provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
     });
     setClient(c);
@@ -71,8 +76,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const eth = getEth();
     if (!eth) { window.open("https://metamask.io/download/", "_blank"); return; }
     try {
-      try { await eth.request({ method: "wallet_addEthereumChain", params: [{ chainId: BRADBURY.chainIdHex, chainName: BRADBURY.chainName, rpcUrls: [BRADBURY.rpcUrl], nativeCurrency: BRADBURY.nativeCurrency, blockExplorerUrls: [BRADBURY.explorerUrl] }] }); } catch {}
-      try { await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BRADBURY.chainIdHex }] }); } catch {}
+      try {
+        await eth.request({
+          method: "wallet_addEthereumChain",
+          params: [{
+            chainId: ACTIVE.chainIdHex,
+            chainName: ACTIVE.chainName,
+            rpcUrls: [ACTIVE.rpcUrl],
+            nativeCurrency: ACTIVE.nativeCurrency,
+            blockExplorerUrls: [ACTIVE.explorerUrl],
+          }],
+        });
+      } catch {}
+      try {
+        await eth.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: ACTIVE.chainIdHex }],
+        });
+      } catch {}
       const accs = await eth.request({ method: "eth_requestAccounts" });
       if (accs?.length > 0) initClient(accs[0]);
     } catch (e: any) { console.error("Connect error:", e?.message); }
@@ -88,32 +109,48 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     let attempt = 0;
     while (attempt < 5) {
       try {
-        return await client.readContract({ address: CONTRACTS.MABUUK, functionName: fn, args });
+        return await client.readContract({ address: ACTIVE_CONTRACT, functionName: fn, args });
       } catch (e: any) {
         attempt++;
         if (attempt >= 5) throw new Error("Read failed: " + (e?.message || e));
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 4000));
       }
     }
   }, [client]);
 
   const write = useCallback(async (fn: string, args: any[] = []) => {
     if (!client) throw new Error("Not connected");
+
     // Step 1: Send transaction
     const hash = await client.writeContract({
-      address: CONTRACTS.MABUUK,
+      address: ACTIVE_CONTRACT,
       functionName: fn,
       args,
       value: BigInt(0),
     });
-    // Step 2: Wait for consensus — Bradbury needs long timeout (up to 5 min)
-    const receipt = await client.waitForTransactionReceipt({
-      hash,
-      status: "ACCEPTED",
-      retries: 200,
-      interval: 3000,
-    } as any);
-    return receipt;
+
+    // Step 2: Manual polling — works across all genlayer-js versions
+    for (let i = 0; i < 200; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const tx = await client.getTransaction({ hash });
+        const s = tx?.status;
+        console.log(`[Mabuuk] Poll #${i}: status=${s}`);
+
+        // status 5 = ACCEPTED, 6 = FINALIZED (numeric enum in v0.23+)
+        if (s === 5 || s === 6 || s === "ACCEPTED" || s === "FINALIZED") {
+          console.log("[Mabuuk] TX accepted!", tx);
+          return tx;
+        }
+        // status 7+ = failed states
+        if (s === 7 || s === 8 || s === "CANCELED" || s === "UNDETERMINED") {
+          throw new Error(`Transaction failed: status=${s}`);
+        }
+      } catch (e: any) {
+        if (e?.message?.includes("failed")) throw e;
+      }
+    }
+    throw new Error("Transaction timeout");
   }, [client]);
 
   return (

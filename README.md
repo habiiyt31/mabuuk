@@ -1,10 +1,12 @@
-# 🍺 Mabuuk is AI Drunk Transfer Protection
+# 🍺 Mabuuk — AI Drunk Transfer Protection
 
 > **Don't let drunk-you ruin sober-you's portfolio.**
 
-Mabuuk is an AI-powered sobriety verification layer for crypto transfers, built on [GenLayer Bradbury Testnet](https://explorer-bradbury.genlayer.com). When you attempt a high-value transaction, the contract automatically generates a logical riddle and uses AI validators to analyze your answer. If you sound drunk, panicked, or impaired — the transaction gets blocked and your wallet is locked for 4 hours.
+Mabuuk is an AI-powered sobriety verification layer for crypto transfers, built on [GenLayer](https://genlayer.com). When you attempt a high-value transaction, the contract automatically generates a logical riddle and uses AI validators to analyze your answer. If you sound drunk, panicked, or impaired — the transaction gets blocked and your wallet is locked for 4 hours.
 
 No more waking up to regret.
+
+**Demo Video:** [Watch on YouTube](https://www.youtube.com/watch?v=hPYbPW6uoow)
 
 ---
 
@@ -26,6 +28,101 @@ Mabuuk acts as an AI bodyguard for your wallet:
 The AI doesn't just check if the answer is correct — it analyzes whether the response shows signs of drunk typing, gibberish, panic, or incoherent reasoning.
 
 > **Note:** Transfer amounts are tracked as `u256` values inside the contract, not as native GEN token transfers. This is a proof-of-concept — the behavioral safety pattern works the same way and can be extended to real token transfers on mainnet.
+
+---
+
+## 🚀 Quick Start (For Hackathon Reviewers)
+
+### Prerequisites
+
+- **Node.js** 18+ and **npm**
+- **MetaMask** browser extension
+
+### Step 1: Clone & Install
+
+```bash
+git clone https://github.com/habiiyt31/mabuuk.git
+cd mabuuk/mabuuk-frontend
+npm install
+```
+
+### Step 2: Choose Network
+
+Mabuuk supports two networks. Open `src/lib/contracts.ts` and set the network:
+
+```typescript
+// Line 3 — change this value to switch networks
+const USE_NETWORK: "bradbury" | "studionet" = "studionet";
+```
+
+| Network | Best For | Consensus Speed | Explorer |
+|---------|----------|----------------|----------|
+| **Studionet** (recommended first) | Quick testing & review | ~10-30 seconds | [studio.genlayer.com](https://studio.genlayer.com) |
+| **Bradbury** | Production testnet | ~3-7 minutes | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
+
+> **💡 Recommendation:** Start with **Studionet** to quickly see the full flow (transfer → riddle → answer → result). Then switch to **Bradbury** to verify the production deployment.
+
+### Step 3: Run the Frontend
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Step 4: Connect MetaMask
+
+1. Click **"CONNECT WALLET"** on the Mabuuk homepage
+2. MetaMask will automatically prompt you to add the correct network
+3. Approve the network addition and account connection
+
+**Network details (auto-configured by the app):**
+
+| Setting | Studionet | Bradbury |
+|---------|-----------|----------|
+| Chain ID | `61999` | `4221` |
+| RPC URL | `https://studio.genlayer.com/api` | `https://zksync-os-testnet-genlayer.zksync.dev` |
+| Currency | GEN | GEN |
+| Faucet | Built-in (Studio) | [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation/) |
+
+> **If using Bradbury:** Visit the [Bradbury Faucet](https://testnet-faucet.genlayer.foundation/) first to get free GEN tokens.
+
+### Step 5: Test a Transfer
+
+**Low-value transfer (instant approval, no riddle):**
+1. Go to the **TRANSFER** tab
+2. Enter any destination address (e.g. `0x8E9F8ACE98dC84159F143ba00C934fAafE3D9bA8`)
+3. Enter amount: `100` (below 500 threshold)
+4. Click **SEND TRANSFER**
+5. Wait for AI validator consensus
+6. Result: ✅ **APPROVED** — no riddle needed
+
+**High-value transfer (sobriety test):**
+1. Enter the same destination address
+2. Enter amount: `1000` (above 500 threshold)
+3. Click **SEND TRANSFER**
+4. Wait for consensus — AI generates a riddle on-chain
+5. A riddle appears on screen — answer it coherently to prove sobriety
+6. Click **SUBMIT ANSWER**
+7. Wait for a second consensus round
+8. Result: ✅ **APPROVED** if sober, or ❌ **REJECTED** + wallet locked 4hrs if drunk
+
+> **⏱ Consensus timing:**
+> - **Studionet:** ~10-30 seconds per transaction
+> - **Bradbury:** ~3-7 minutes per transaction (this is normal for the production testnet)
+
+### Step 6: Switch to Bradbury (Optional)
+
+After testing on Studionet, verify the production deployment:
+
+1. In `src/lib/contracts.ts`, change:
+   ```typescript
+   const USE_NETWORK: "bradbury" | "studionet" = "bradbury";
+   ```
+2. Restart the dev server (`Ctrl+C`, then `npm run dev`)
+3. In MetaMask: switch to **GenLayer Testnet Bradbury** network (or reconnect via the app)
+4. Make sure you have GEN tokens from the [Bradbury Faucet](https://testnet-faucet.genlayer.foundation/)
+5. Test again — same flow, just slower consensus
 
 ---
 
@@ -54,6 +151,18 @@ User → MetaMask → GenLayer RPC → Mabuuk Contract → AI Validators
                               │  FAIL → locked 4hr   │
                               └─────────────────────┘
 ```
+
+### Two-Step Flow
+
+**Step 1: `execute_transfer(destination, amount, current_time)`**
+- If `amount < 500` → AI validators approve instantly, no riddle needed
+- If `amount ≥ 500` → AI generates a logical riddle via `gl.nondet.exec_prompt()`, stores the transfer as pending
+
+**Step 2: `answer_riddle(user_answer, current_time)`**
+- User submits their answer to the riddle
+- AI validators independently evaluate the answer for signs of impairment
+- `PASS` → transfer approved, stats updated
+- `FAIL` → transfer rejected, wallet locked for 4 hours, funds saved counter incremented
 
 ### Core Features
 
@@ -89,11 +198,16 @@ User → MetaMask → GenLayer RPC → Mabuuk Contract → AI Validators
 Mabuuk uses `gl.vm.run_nondet_unsafe(leader_fn, validator_fn)` for both riddle generation and sobriety verification:
 
 - **Leader node** — generates the result (riddle text or PASS/FAIL decision)
-- **Validator nodes** — independently verify the leader's output
+- **Validator nodes** — independently verify the leader's output using different LLMs
+- **Consensus** — majority vote determines the final outcome
+
+This means the sobriety check isn't relying on a single AI model — multiple independent AI validators must agree on whether you're sober or not.
 
 ### Equivalence Principle
 
 **Pattern: Partial Field Matching** — validators compare only the final `PASS`/`FAIL` status (not the full LLM reasoning), ensuring consensus on the binary outcome while allowing variation in analysis.
+
+This is critical because different LLMs (GPT-4, Claude, LLaMA, etc.) will explain their reasoning differently, but they must agree on the verdict: is this person sober enough to make this transfer?
 
 ### GenLayer Patterns Used
 
@@ -113,36 +227,55 @@ Mabuuk uses `gl.vm.run_nondet_unsafe(leader_fn, validator_fn)` for both riddle g
 |-------|------------|
 | Smart Contract | Python (GenLayer Intelligent Contract) |
 | Frontend | Next.js 14 + TypeScript + Tailwind CSS |
-| Wallet | MetaMask + genlayer-js SDK |
-| Network | GenLayer Testnet Bradbury (Chain ID `4221`) |
+| Wallet | MetaMask + genlayer-js SDK v0.23.1 |
+| Network | GenLayer Studionet + Testnet Bradbury |
+| Consensus | Optimistic Democracy with Partial Field Matching |
 
 ---
 
-## 🚀 Deploy & Run
+## 🔧 Contract Deployment (Optional)
+
+If you want to deploy your own instance of the contract:
 
 ```bash
 # 1. Install GenLayer CLI
 npm install -g genlayer
 
 # 2. Setup account
-genlayer account import --private-key=0xYOUR_KEY
+genlayer account create
 genlayer account unlock
-genlayer network testnet-bradbury
 
-# 3. Get testnet GEN tokens
-# → https://testnet-faucet.genlayer.foundation/
-
-# 4. Deploy the contract
-cd mabuuk-frontend
-npm install
+# 3. Deploy to Studionet (fast testing)
+genlayer network set studionet
 genlayer deploy --contract contracts/mabuuk.py
+# → Copy the contract address from output
 
-# 5. Set your deployed contract address in contracts.ts
-# MABUUK: "0xYOUR_CONTRACT_ADDRESS" as `0x${string}`
+# 4. Deploy to Bradbury (production testnet)
+genlayer network set testnet-bradbury
+# Get GEN tokens first: https://testnet-faucet.genlayer.foundation/
+genlayer deploy --contract contracts/mabuuk.py
+# → Copy the contract address from output
 
-# 6. Run the frontend
+# 5. Update contract addresses in src/lib/contracts.ts
+# Set MABUUK_STUDIONET and/or MABUUK_BRADBURY to your new addresses
+
+# 6. Run frontend
 npm run dev
 ```
+
+### Network Switching
+
+The app supports both **Studionet** (fast testing) and **Bradbury** (production testnet). Toggle in `src/lib/contracts.ts`:
+
+```typescript
+// One line controls everything: chain, RPC, contract address, MetaMask network
+const USE_NETWORK: "bradbury" | "studionet" = "studionet";
+```
+
+| `USE_NETWORK` | Chain | RPC | Contract |
+|---------------|-------|-----|----------|
+| `"studionet"` | GenLayer Studio (61999) | studio.genlayer.com/api | `0x58c020...0D4A` |
+| `"bradbury"` | Bradbury Testnet (4221) | rpc-bradbury.genlayer.com | `0x2bFd2f...1f` |
 
 ---
 
@@ -152,27 +285,26 @@ npm run dev
 MABUUK-FRONTEND/
 │
 ├── contracts/
-│   └── mabuuk.py                # GenLayer Intelligent Contract
+│   └── mabuuk.py                  # GenLayer Intelligent Contract (Python)
 │
 ├── src/
 │   ├── app/
-│   │   ├── globals.css          # Global styles
-│   │   ├── layout.tsx           # Root layout
-│   │   └── page.tsx             # Main page
+│   │   ├── globals.css            # Retro pixel art theme styles
+│   │   ├── layout.tsx             # Root layout with WalletProvider
+│   │   └── page.tsx               # Main page (connect or app)
 │   │
 │   ├── components/
-│   │   ├── connect-wallet.tsx   # MetaMask wallet connection
-│   │   ├── mabuuk-app.tsx       # Core app logic & UI
-│   │   └── wallet-info.tsx      # Wallet stats display
+│   │   ├── connect-wallet.tsx     # MetaMask connection screen
+│   │   ├── mabuuk-app.tsx         # Core app: transfer, riddle, stats, docs
+│   │   └── wallet-info.tsx        # Wallet address display
 │   │
 │   └── lib/
-│       ├── contracts.ts         # Contract address & ABI config
-│       └── wallet-provider.tsx  # Wallet context provider
+│       ├── contracts.ts           # Network config & contract addresses
+│       └── wallet-provider.tsx    # Wallet context: read/write/connect
 │
-├── .gitignore
-├── next.config.js
 ├── package.json
 ├── tsconfig.json
+├── next.config.js
 └── README.md
 ```
 
@@ -191,32 +323,57 @@ Click "Send Transfer"
        │
       NO
        ↓
-AI Generates Riddle (on-chain)
+AI Generates Riddle (on-chain via Optimistic Democracy)
 Transfer stored as PENDING
        ↓
 User Answers Riddle
        ↓
 Click "Submit Answer"
        ↓
-  AI Analyzes ─── PASS ──→ ✅ APPROVED (sober)
+  AI Validators Analyze ─── PASS ──→ ✅ APPROVED (sober)
        │
      FAIL
        ↓
-❌ REJECTED — Wallet locked 4 hours
+❌ REJECTED — Wallet locked 4 hours — Funds saved
 ```
 
 ---
 
-## 🌐 Live Deployment
+## 🌐 Deployed Contracts
+
+| Network | Contract Address | Chain ID | Explorer |
+|---------|-----------------|----------|----------|
+| **Studionet** | `0x58c02062753344baE0bb40796AB25CDeAF5c0D4A` | `61999` | [studio.genlayer.com](https://studio.genlayer.com) |
+| **Bradbury** | [`0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) | `4221` | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
 
 | | |
 |---|---|
-| **Contract Address** | [`0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) |
-| **Network** | GenLayer Testnet Bradbury |
-| **Chain ID** | `4221` |
-| **RPC** | `https://rpc-bradbury.genlayer.com` |
-| **Explorer** | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
-| **Faucet** | [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation/) |
+| **GenLayer RPC (Bradbury)** | `https://rpc-bradbury.genlayer.com` |
+| **MetaMask RPC (Bradbury)** | `https://zksync-os-testnet-genlayer.zksync.dev` |
+| **Faucet (Bradbury)** | [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation/) |
+| **Demo Video** | [YouTube](https://www.youtube.com/watch?v=hPYbPW6uoow) |
+
+---
+
+## 🐛 Troubleshooting
+
+### Transaction stuck on "Submitting..."
+Bradbury consensus takes 3-7 minutes — this is normal. Check the [Explorer](https://explorer-bradbury.genlayer.com) to see if your transaction is progressing. For faster testing, switch to Studionet (~10-30 seconds).
+
+### MetaMask shows wrong network
+Go to MetaMask → Settings → Networks → remove old GenLayer networks. Then reconnect through the app — it will auto-add the correct network based on `USE_NETWORK`.
+
+### "503 Service Unavailable" error
+Bradbury testnet may occasionally experience high load. Wait a minute and try again. The app has built-in retry logic (5 attempts with 4-second intervals).
+
+### "Read failed" after transfer
+The contract state read happens immediately after consensus. If the RPC is temporarily slow, the app retries automatically. Wait for the status to update.
+
+### Switching networks doesn't work
+1. Change `USE_NETWORK` in `src/lib/contracts.ts`
+2. Restart dev server (`Ctrl+C` → `npm run dev`)
+3. In MetaMask, manually switch to the correct network
+4. Reconnect wallet if needed
 
 ---
 
@@ -227,11 +384,12 @@ Click "Submit Answer"
 | Requirement | Status |
 |-------------|--------|
 | Optimistic Democracy consensus | ✅ `gl.vm.run_nondet_unsafe(leader_fn, validator_fn)` |
-| Equivalence Principle | ✅ Partial Field Matching (PASS/FAIL only) |
-| Deployed on Bradbury Testnet | ✅ |
-| Frontend + MetaMask integration | ✅ |
+| Equivalence Principle | ✅ Partial Field Matching (PASS/FAIL binary consensus) |
+| Deployed on Bradbury Testnet | ✅ [`0x2bFd...1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) |
+| Deployed on Studionet | ✅ `0x58c0...0D4A` |
+| Frontend + MetaMask integration | ✅ Next.js 14 + genlayer-js SDK |
 | GitHub repository | ✅ |
-| Demo video | ✅ |
+| Demo video | ✅ [YouTube](https://www.youtube.com/watch?v=hPYbPW6uoow) |
 
 ---
 
