@@ -57,7 +57,7 @@ const USE_NETWORK: "bradbury" | "studionet" = "studionet";
 
 | Network | Best For | Consensus Speed | Explorer |
 |---------|----------|----------------|----------|
-| **Studionet** (recommended first) | Quick testing & review | ~10-30 seconds | [studio.genlayer.com](https://studio.genlayer.com) |
+| **Studionet** (recommended first) | Quick testing & review | ~10-30 seconds | [explorer-studio.genlayer.com](https://explorer-studio.genlayer.com) |
 | **Bradbury** | Production testnet | ~3-7 minutes | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
 
 > **💡 Recommendation:** Start with **Studionet** to quickly see the full flow (transfer → riddle → answer → result). Then switch to **Bradbury** to verify the production deployment.
@@ -344,7 +344,7 @@ Click "Submit Answer"
 
 | Network | Contract Address | Chain ID | Explorer |
 |---------|-----------------|----------|----------|
-| **Studionet** | `0x58c02062753344baE0bb40796AB25CDeAF5c0D4A` | `61999` | [studio.genlayer.com](https://studio.genlayer.com) |
+| **Studionet** | [`0x58c02062753344baE0bb40796AB25CDeAF5c0D4A`](https://explorer-studio.genlayer.com/address/0x58c02062753344baE0bb40796AB25CDeAF5c0D4A)| `61999` | [explorer-studio.genlayer.com](https://explorer-studio.genlayer.com) |
 | **Bradbury** | [`0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f`](https://explorer-bradbury.genlayer.com/address/0x2bFd2f9B48Ef488B8e8D0b3aCFB1af64C1868e1f) | `4221` | [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com) |
 
 | | |
