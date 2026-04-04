@@ -87,3 +87,434 @@ body{background:var(--bg);color:var(--white);font-family:var(--rf);font-size:20p
 .footer a:hover{text-decoration:underline}
 
 @media(max-width:600px){.header{padding:10px 14px}.h-title{font-size:10px}.app-wrap{padding:12px}.tab-btn{font-size:7px;padding:8px}.panel{padding:16px}.stat-val{font-size:16px}.connect-card{padding:0 10px}}
+
+/* ── Docs Sub-Navigation ── */
+.docs-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #333;
+  padding-bottom: 8px;
+}
+
+.docs-nav-btn {
+  background: transparent;
+  border: 2px solid #333;
+  color: #888;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.docs-nav-btn:hover {
+  border-color: #ffcc00;
+  color: #ffcc00;
+}
+
+.docs-nav-btn.active {
+  background: #ffcc00;
+  border-color: #ffcc00;
+  color: #000;
+}
+
+/* ── Flow Steps (How It Works) ── */
+.flow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 204, 0, 0.05);
+  border-left: 3px solid #ffcc00;
+}
+
+.flow-num {
+  background: #ffcc00;
+  color: #000;
+  font-weight: 800;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.flow-step span:last-child {
+  font-size: 13px;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+/* ── Feature List (Why GenLayer) ── */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+}
+
+.feature-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.feature-item strong {
+  color: #ffcc00;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.feature-item p {
+  color: #999;
+  font-size: 12px;
+  margin: 0;
+}
+
+/* ── Highlight Box ── */
+.highlight-box {
+  background: rgba(255, 204, 0, 0.1);
+  border: 2px solid #ffcc00;
+  padding: 16px;
+  color: #ffcc00;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ── FAQ Accordion ── */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.faq-item {
+  border: 1px solid #333;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.faq-item.open {
+  border-color: #ffcc00;
+}
+
+.faq-q {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  color: #eee;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.4;
+  transition: background 0.2s;
+}
+
+.faq-q:hover {
+  background: rgba(255, 204, 0, 0.05);
+}
+
+.faq-arrow {
+  color: #ffcc00;
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.faq-a {
+  padding: 0 16px 14px 16px;
+  color: #999;
+  font-size: 13px;
+  line-height: 1.6;
+  border-top: 1px solid #333;
+  padding-top: 12px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Roadmap Timeline ── */
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 16px;
+  padding-left: 8px;
+}
+
+.roadmap-phase {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.roadmap-phase:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: #333;
+}
+
+.roadmap-phase.current:not(:last-child)::before {
+  background: #ffcc00;
+}
+
+.roadmap-marker {
+  font-size: 16px;
+  color: #555;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.roadmap-phase.current .roadmap-marker {
+  color: #ffcc00;
+  text-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
+}
+
+.roadmap-content h3 {
+  color: #888;
+  font-size: 13px;
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.roadmap-phase.current .roadmap-content h3 {
+  color: #ffcc00;
+}
+
+.roadmap-content p {
+  color: #777;
+  font-size: 12px;
+  margin: 2px 0;
+  line-height: 1.5;
+}
+
+.roadmap-phase.current .roadmap-content p {
+  color: #bbb;
+}
+
+/* ── Architecture Diagram ── */
+.arch-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 0;
+}
+
+.arch-layer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.arch-box {
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.arch-arrow {
+  color: #555;
+  font-size: 14px;
+}
+
+.arch-user {
+  background: rgba(59, 158, 255, 0.15);
+  border: 1px solid #3b9eff;
+  color: #3b9eff;
+}
+
+.arch-frontend {
+  background: rgba(255, 204, 0, 0.1);
+  border: 1px solid #ffcc00;
+  color: #ffcc00;
+}
+
+.arch-network {
+  background: rgba(0, 229, 160, 0.1);
+  border: 1px solid #00e5a0;
+  color: #00e5a0;
+}
+
+.arch-contract {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #666;
+  color: #ccc;
+}
+
+.arch-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 8px;
+}
+
+.arch-branch .arch-box {
+  max-width: 100%;
+  font-size: 11px;
+  padding: 10px;
+}
+
+.arch-branch .arch-box p {
+  margin: 4px 0 0 0;
+  font-size: 10px;
+  color: #888;
+}
+
+.arch-low {
+  background: rgba(255, 204, 0, 0.05);
+  border: 1px solid #555;
+  color: #ccc;
+}
+
+.arch-high {
+  background: rgba(255, 77, 106, 0.05);
+  border: 1px solid #555;
+  color: #ccc;
+}
+
+.arch-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 8px;
+}
+
+.arch-pass {
+  background: rgba(0, 229, 160, 0.15);
+  border: 1px solid #00e5a0;
+  color: #00e5a0;
+  font-size: 11px;
+}
+
+.arch-fail {
+  background: rgba(255, 77, 106, 0.15);
+  border: 1px solid #ff4d6a;
+  color: #ff4d6a;
+  font-size: 11px;
+}
+
+/* ── Tech Grid ── */
+.tech-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tech-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #2a2a2a;
+}
+
+.tech-label {
+  color: #ffcc00;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.tech-value {
+  color: #bbb;
+  font-size: 12px;
+}
+
+/* ── Link Grid ── */
+.link-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  color: #ccc;
+  text-decoration: none;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.link-card:hover {
+  border-color: #ffcc00;
+  color: #ffcc00;
+  background: rgba(255, 204, 0, 0.05);
+}
+
+.link-icon {
+  font-size: 18px;
+}
+
+/* ── Responsive for docs ── */
+@media (max-width: 480px) {
+  .docs-nav {
+    gap: 3px;
+  }
+  .docs-nav-btn {
+    font-size: 9px;
+    padding: 5px 8px;
+  }
+  .arch-split,
+  .arch-results {
+    grid-template-columns: 1fr;
+  }
+  .link-grid {
+    grid-template-columns: 1fr;
+  }
+}

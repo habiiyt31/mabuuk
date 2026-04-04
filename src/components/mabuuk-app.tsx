@@ -4,6 +4,7 @@ import { useWallet } from "@/lib/wallet-provider";
 
 type Tab = "transfer" | "stats" | "docs";
 type Phase = "input" | "riddle" | "done";
+type DocSection = "how" | "why" | "faq" | "roadmap" | "arch";
 
 export default function MabuukApp() {
   const { read, write, address } = useWallet();
@@ -23,6 +24,9 @@ export default function MabuukApp() {
   // Stats
   const [stats, setStats] = useState<any>(null);
 
+  // Docs sub-navigation
+  const [docSection, setDocSection] = useState<DocSection>("how");
+
   const now = () => Math.floor(Date.now() / 1000);
 
   // ── STEP 1: Attempt transfer ──
@@ -39,13 +43,11 @@ export default function MabuukApp() {
       const msg = typeof err === "string" ? err : String(err);
 
       if (msg.startsWith("RIDDLE:")) {
-        // High-risk: AI generated a riddle, need user answer
         const riddleText = msg.replace("RIDDLE:", "").trim();
         setRiddle(riddleText);
         setPhase("riddle");
         setStatus("High-value transfer detected! Solve the riddle to prove you're sober.");
       } else if (msg.includes("APPROVED")) {
-        // Low-risk: approved instantly
         setStatus(msg);
         setPhase("done");
       } else if (msg.includes("LOCKED")) {
@@ -113,6 +115,33 @@ export default function MabuukApp() {
   const isPass = status.includes("APPROVED");
   const isFail = status.includes("REJECTED") || status.includes("LOCKED");
 
+  // ── FAQ data ──
+  const faqItems = [
+    {
+      q: "Transfer amounts are simulated — does this actually work with real tokens?",
+      a: "Yes. The behavioral safety pattern is identical whether tracking u256 values or native tokens. The AI sobriety check, riddle generation, consensus verification, and wallet locking all work the same way. On mainnet, it's a matter of integrating with the native token transfer flow — the hard part (AI consensus on subjective judgment) is already proven.",
+    },
+    {
+      q: "Why not just use a simple math quiz instead of AI?",
+      a: "A static quiz can be memorized or brute-forced. Mabuuk generates fresh riddles every time using on-chain AI, and the sobriety analysis goes beyond right/wrong answers — it detects patterns like gibberish typing, panic behavior, and incoherent reasoning. This requires subjective judgment, which is exactly what GenLayer's Optimistic Democracy is built for.",
+    },
+    {
+      q: "What if I'm sober but fail the riddle?",
+      a: "The AI doesn't just check if the answer is correct — it analyzes HOW you answered. A sober person giving a wrong but logical answer will likely still pass. A drunk person giving the right answer but typing incoherently may still fail. The wallet lock is 4 hours as a safety window, not a permanent block.",
+    },
+    {
+      q: "Why GenLayer and not BTC/Ethereum/Solana?",
+      a: "Traditional blockchains are deterministic — every validator must produce the exact same output. Sobriety detection is inherently subjective and non-deterministic. GenLayer is the only chain where multiple AI validators with different LLMs can independently assess subjective conditions and reach consensus. You literally cannot build this on Ethereum.",
+    },
+    {
+      q: "What's the revenue model?",
+      a: "GenLayer's Dev Fee model gives contract creators up to 20% of all transaction fees their contract generates — permanently. Every sobriety check that runs through Mabuuk earns revenue for the developer. More users = more fees, no cap.",
+    },
+  ];
+
+  // ── FAQ toggle state ──
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <div className="app-wrap">
       <div className="tab-bar">
@@ -138,7 +167,6 @@ export default function MabuukApp() {
             Transfers above 500 tokens trigger an AI sobriety test automatically.
           </p>
 
-          {/* ── Phase: Input ── */}
           {phase === "input" && (
             <>
               <div className="step">
@@ -182,7 +210,6 @@ export default function MabuukApp() {
             </>
           )}
 
-          {/* ── Phase: Riddle ── */}
           {phase === "riddle" && (
             <>
               <div className="step">
@@ -213,7 +240,6 @@ export default function MabuukApp() {
             </>
           )}
 
-          {/* ── Phase: Done ── */}
           {phase === "done" && (
             <div className="step">
               <button
@@ -226,7 +252,6 @@ export default function MabuukApp() {
             </div>
           )}
 
-          {/* ── Status bar ── */}
           {status && (
             <div
               className={`status-box ${
@@ -283,84 +308,327 @@ export default function MabuukApp() {
       {/* ════════ DOCS TAB ════════ */}
       {tab === "docs" && (
         <div className="panel docs">
-          <h2 className="panel-title">HOW MABUUK WORKS</h2>
-          <div className="doc-s">
-            <h3>What is Mabuuk?</h3>
-            <p>
-              Mabuuk (Indonesian for &quot;drunk&quot;) protects your crypto
-              wallet from drunk, FOMO, or panic transfers. High-value
-              transactions require passing an AI sobriety test.
-            </p>
-          </div>
-          <div className="doc-s">
-            <h3>The Flow</h3>
-            <p>
-              <strong>1.</strong> Enter destination and amount, then click Send.
-            </p>
-            <p>
-              <strong>2.</strong> If amount &lt; 500 → approved instantly. No
-              riddle needed.
-            </p>
-            <p>
-              <strong>3.</strong> If amount ≥ 500 → AI generates a riddle
-              on-chain. You must answer it.
-            </p>
-            <p>
-              <strong>4.</strong> Multiple AI validators independently analyze
-              your answer.
-            </p>
-            <p>
-              <strong>5.</strong> Sober = approved. Mabuuk = rejected + wallet
-              locked 4 hours.
-            </p>
-          </div>
-          <div className="doc-s">
-            <h3>Optimistic Democracy Consensus</h3>
-            <p>
-              Uses <code>gl.vm.run_nondet_unsafe(leader_fn, validator_fn)</code>.
-              Multiple GenLayer validator nodes with different LLMs independently
-              evaluate your answer. Majority vote determines outcome.
-            </p>
-          </div>
-          <div className="doc-s">
-            <h3>Equivalence Principle</h3>
-            <p>
-              Pattern 1: Partial Field Matching. Validators compare only{" "}
-              <code>status</code> (PASS/FAIL), not <code>reasoning</code>.
-              Different LLMs may explain differently but must agree on the
-              verdict.
-            </p>
-          </div>
-          <div className="doc-s">
-            <h3>Links</h3>
-            <p>
-              <a
-                href="https://explorer-bradbury.genlayer.com"
-                target="_blank"
-                rel="noopener"
+          {/* ── Docs sub-nav ── */}
+          <div className="docs-nav">
+            {[
+              { id: "how" as DocSection, label: "How It Works" },
+              { id: "why" as DocSection, label: "Why GenLayer" },
+              { id: "faq" as DocSection, label: "FAQ" },
+              { id: "roadmap" as DocSection, label: "Roadmap" },
+              { id: "arch" as DocSection, label: "Architecture" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                className={`docs-nav-btn ${docSection === item.id ? "active" : ""}`}
+                onClick={() => setDocSection(item.id)}
               >
-                GenLayer Explorer
-              </a>
-            </p>
-            <p>
-              <a
-                href="https://testnet-faucet.genlayer.foundation/"
-                target="_blank"
-                rel="noopener"
-              >
-                Bradbury Faucet
-              </a>
-            </p>
-            <p>
-              <a
-                href="https://docs.genlayer.com"
-                target="_blank"
-                rel="noopener"
-              >
-                GenLayer Docs
-              </a>
-            </p>
+                {item.label}
+              </button>
+            ))}
           </div>
+
+          {/* ── HOW IT WORKS ── */}
+          {docSection === "how" && (
+            <>
+              <h2 className="panel-title">HOW MABUUK WORKS</h2>
+              <div className="doc-s">
+                <h3>What is Mabuuk?</h3>
+                <p>
+                  Mabuuk (Indonesian for &quot;drunk&quot;) protects your crypto
+                  wallet from drunk, FOMO, or panic transfers. High-value
+                  transactions require passing an AI sobriety test.
+                </p>
+              </div>
+              <div className="doc-s">
+                <h3>The Flow</h3>
+                <div className="flow-steps">
+                  <div className="flow-step">
+                    <span className="flow-num">1</span>
+                    <span>Enter destination and amount, then click Send.</span>
+                  </div>
+                  <div className="flow-step">
+                    <span className="flow-num">2</span>
+                    <span>If amount &lt; 500 → approved instantly. No riddle needed.</span>
+                  </div>
+                  <div className="flow-step">
+                    <span className="flow-num">3</span>
+                    <span>If amount ≥ 500 → AI generates a riddle on-chain. You must answer it.</span>
+                  </div>
+                  <div className="flow-step">
+                    <span className="flow-num">4</span>
+                    <span>Multiple AI validators independently analyze your answer.</span>
+                  </div>
+                  <div className="flow-step">
+                    <span className="flow-num">5</span>
+                    <span>Sober = approved. Mabuuk = rejected + wallet locked 4 hours.</span>
+                  </div>
+                </div>
+              </div>
+              <div className="doc-s">
+                <h3>Optimistic Democracy Consensus</h3>
+                <p>
+                  Uses <code>gl.vm.run_nondet_unsafe(leader_fn, validator_fn)</code>.
+                  Multiple GenLayer validator nodes with different LLMs independently
+                  evaluate your answer. Majority vote determines outcome.
+                </p>
+              </div>
+              <div className="doc-s">
+                <h3>Equivalence Principle</h3>
+                <p>
+                  Pattern: Partial Field Matching. Validators compare only the{" "}
+                  <code>PASS/FAIL</code> status, not the full reasoning.
+                  Different LLMs may explain differently but must agree on the
+                  verdict.
+                </p>
+              </div>
+              <div className="doc-s">
+                <h3>Note on Transfer Amounts</h3>
+                <p>
+                  Transfer amounts are tracked as <code>u256</code> values inside
+                  the contract, not as native GEN token transfers. This is a
+                  proof-of-concept — the behavioral safety pattern works the same
+                  way and can be extended to real token transfers on mainnet.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* ── WHY GENLAYER ── */}
+          {docSection === "why" && (
+            <>
+              <h2 className="panel-title">WHY GENLAYER?</h2>
+              <div className="doc-s">
+                <h3>The Problem with Traditional Chains</h3>
+                <p>
+                  Traditional smart contracts are deterministic — given the same
+                  input, every validator produces the exact same output. This works
+                  great for math, token transfers, and rule-based logic.
+                </p>
+                <p>
+                  But sobriety detection is subjective. Is this person typing
+                  gibberish because they&apos;re drunk, or because English isn&apos;t their
+                  first language? Is this a panic sell or a calculated exit? These
+                  questions require judgment, not computation.
+                </p>
+              </div>
+              <div className="doc-s">
+                <h3>GenLayer&apos;s Solution</h3>
+                <p>
+                  GenLayer uses Intelligent Contracts — smart contracts that can
+                  use AI models as part of their execution logic. Multiple
+                  validators running different LLMs (GPT-4, Claude, LLaMA, etc.)
+                  independently assess the same input and vote on the outcome
+                  through Optimistic Democracy consensus.
+                </p>
+              </div>
+              <div className="doc-s">
+                <h3>What This Means</h3>
+                <div className="feature-list">
+                  <div className="feature-item">
+                    <span className="feature-icon">🛡️</span>
+                    <div>
+                      <strong>No single point of AI failure</strong>
+                      <p>Diverse models reduce bias and manipulation risk</p>
+                    </div>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-icon">🤝</span>
+                    <div>
+                      <strong>Subjective decisions become trustless</strong>
+                      <p>Consensus replaces blind trust in one model</p>
+                    </div>
+                  </div>
+                  <div className="feature-item">
+                    <span className="feature-icon">⚖️</span>
+                    <div>
+                      <strong>Equivalence Principle</strong>
+                      <p>Validators agree on the verdict even if their reasoning differs</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="doc-s">
+                <div className="highlight-box">
+                  Mabuuk is only possible on GenLayer. The behavioral safety
+                  pattern it demonstrates — AI consensus on subjective human
+                  conditions — is a new primitive that doesn&apos;t exist on any other
+                  chain.
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── FAQ ── */}
+          {docSection === "faq" && (
+            <>
+              <h2 className="panel-title">FREQUENTLY ASKED QUESTIONS</h2>
+              <div className="faq-list">
+                {faqItems.map((item, i) => (
+                  <div
+                    key={i}
+                    className={`faq-item ${openFaq === i ? "open" : ""}`}
+                  >
+                    <button
+                      className="faq-q"
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    >
+                      <span>{item.q}</span>
+                      <span className="faq-arrow">{openFaq === i ? "▾" : "▸"}</span>
+                    </button>
+                    {openFaq === i && (
+                      <div className="faq-a">{item.a}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ── ROADMAP ── */}
+          {docSection === "roadmap" && (
+            <>
+              <h2 className="panel-title">VISION & ROADMAP</h2>
+              <p className="panel-desc">
+                Mabuuk is not just a hackathon project — it&apos;s a proof-of-concept
+                for a new category: behavioral safety infrastructure for crypto.
+              </p>
+              <div className="roadmap">
+                <div className="roadmap-phase current">
+                  <div className="roadmap-marker">●</div>
+                  <div className="roadmap-content">
+                    <h3>Phase 1 — Hackathon MVP</h3>
+                    <p>AI sobriety verification via riddle-based cognitive assessment</p>
+                    <p>Simulated transfer amounts (u256 values)</p>
+                    <p>Deployed on GenLayer Bradbury Testnet + Studionet</p>
+                  </div>
+                </div>
+                <div className="roadmap-phase">
+                  <div className="roadmap-marker">○</div>
+                  <div className="roadmap-content">
+                    <h3>Phase 2 — Mainnet Ready</h3>
+                    <p>Integrate with native GEN token transfers</p>
+                    <p>Priority mainnet deployment via GenLayer accelerator</p>
+                    <p>Activate Dev Fee model — earn 20% of transaction fees permanently</p>
+                  </div>
+                </div>
+                <div className="roadmap-phase">
+                  <div className="roadmap-marker">○</div>
+                  <div className="roadmap-content">
+                    <h3>Phase 3 — Behavioral Safety SDK</h3>
+                    <p>Expand beyond sobriety: panic selling, unusual patterns, flagged addresses</p>
+                    <p>Package as embeddable middleware for any wallet or dApp</p>
+                    <p>Composability: other devs building on Mabuuk amplify revenue</p>
+                  </div>
+                </div>
+                <div className="roadmap-phase">
+                  <div className="roadmap-marker">○</div>
+                  <div className="roadmap-content">
+                    <h3>Phase 4 — Agentic Economy Infrastructure</h3>
+                    <p>AI agent guardrails for autonomous transaction execution</p>
+                    <p>Cross-chain behavioral safety via LayerZero integration</p>
+                    <p>Community-driven threshold and rule governance</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── ARCHITECTURE ── */}
+          {docSection === "arch" && (
+            <>
+              <h2 className="panel-title">ARCHITECTURE</h2>
+              <div className="doc-s">
+                <h3>System Overview</h3>
+                <div className="arch-diagram">
+                  <div className="arch-layer">
+                    <div className="arch-box arch-user">👛 User (MetaMask)</div>
+                    <div className="arch-arrow">▼</div>
+                  </div>
+                  <div className="arch-layer">
+                    <div className="arch-box arch-frontend">⚛️ Frontend (Next.js + genlayer-js)</div>
+                    <div className="arch-arrow">▼</div>
+                  </div>
+                  <div className="arch-layer">
+                    <div className="arch-box arch-network">🌐 GenLayer Network (Bradbury / Studionet)</div>
+                    <div className="arch-arrow">▼</div>
+                  </div>
+                  <div className="arch-layer">
+                    <div className="arch-box arch-contract">🐍 Intelligent Contract (Python)</div>
+                  </div>
+                  <div className="arch-split">
+                    <div className="arch-branch">
+                      <div className="arch-box arch-low">
+                        <strong>execute_transfer()</strong>
+                        <p>amount &lt; 500 → ✅ Auto-approve</p>
+                        <p>amount ≥ 500 → 🧩 Generate Riddle</p>
+                      </div>
+                    </div>
+                    <div className="arch-branch">
+                      <div className="arch-box arch-high">
+                        <strong>answer_riddle()</strong>
+                        <p>Leader: analyze → PASS/FAIL</p>
+                        <p>Validators: verify verdict</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="arch-results">
+                    <div className="arch-box arch-pass">✅ PASS → Transfer Approved</div>
+                    <div className="arch-box arch-fail">🔒 FAIL → Locked 4 Hours</div>
+                  </div>
+                </div>
+              </div>
+              <div className="doc-s">
+                <h3>Tech Stack</h3>
+                <div className="tech-grid">
+                  <div className="tech-item">
+                    <span className="tech-label">Contract</span>
+                    <span className="tech-value">Python (GenLayer Intelligent Contract)</span>
+                  </div>
+                  <div className="tech-item">
+                    <span className="tech-label">Frontend</span>
+                    <span className="tech-value">Next.js 14 + TypeScript + Tailwind CSS</span>
+                  </div>
+                  <div className="tech-item">
+                    <span className="tech-label">Wallet</span>
+                    <span className="tech-value">MetaMask + genlayer-js SDK</span>
+                  </div>
+                  <div className="tech-item">
+                    <span className="tech-label">Network</span>
+                    <span className="tech-value">GenLayer Bradbury (4221) + Studionet (61999)</span>
+                  </div>
+                  <div className="tech-item">
+                    <span className="tech-label">Consensus</span>
+                    <span className="tech-value">Optimistic Democracy + Partial Field Matching</span>
+                  </div>
+                </div>
+              </div>
+              <div className="doc-s">
+                <h3>Links</h3>
+                <div className="link-grid">
+                  <a href="https://explorer-bradbury.genlayer.com" target="_blank" rel="noopener" className="link-card">
+                    <span className="link-icon">🔗</span>
+                    <span>GenLayer Explorer</span>
+                  </a>
+                  <a href="https://testnet-faucet.genlayer.foundation/" target="_blank" rel="noopener" className="link-card">
+                    <span className="link-icon">🪙</span>
+                    <span>Bradbury Faucet</span>
+                  </a>
+                  <a href="https://docs.genlayer.com" target="_blank" rel="noopener" className="link-card">
+                    <span className="link-icon">📄</span>
+                    <span>GenLayer Docs</span>
+                  </a>
+                  <a href="https://github.com/habiiyt31/mabuuk" target="_blank" rel="noopener" className="link-card">
+                    <span className="link-icon">💻</span>
+                    <span>GitHub Repo</span>
+                  </a>
+                  <a href="https://dorahacks.io/buidl/41987" target="_blank" rel="noopener" className="link-card">
+                    <span className="link-icon">🏆</span>
+                    <span>DoraHacks BUIDL</span>
+                  </a>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
