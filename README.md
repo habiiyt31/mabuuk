@@ -42,7 +42,7 @@ The AI doesn't just check if the answer is correct — it analyzes whether the r
 
 ```bash
 git clone https://github.com/habiiyt31/mabuuk.git
-cd mabuuk/mabuuk-frontend
+cd mabuuk
 npm install
 ```
 
