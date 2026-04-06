@@ -46,7 +46,7 @@ class Mabuuk(gl.Contract):
                 if reason is None:
                     reason = "Wallet locked"
                 self.error = "WALLET LOCKED: " + reason
-                raise Exception("WALLET LOCKED! " + reason)
+                gl.vm.UserError("WALLET LOCKED! " + reason)
 
         # Low-risk: approve instantly, no riddle needed
         if amount < self.risk_threshold:
@@ -90,13 +90,13 @@ class Mabuuk(gl.Contract):
         riddle = self.pending_riddle.get(sender)
         if riddle is None or str(riddle).strip() == "":
             self.error = "NO_PENDING: No pending transfer to verify."
-            raise Exception("No pending transfer found.")
+            gl.vm.UserError("No pending transfer found.")
 
         dest = self.pending_dest.get(sender)
         amount = self.pending_amt.get(sender)
         if dest is None or amount is None:
             self.error = "NO_PENDING: Incomplete pending data."
-            raise Exception("Incomplete pending transfer data.")
+            gl.vm.UserError("Incomplete pending transfer data.")
 
         amount_val = int(amount)
         riddle_val = str(riddle)
